@@ -20,11 +20,9 @@ defmodule Point do
     p.x == q.x and p.y == q.y
   end
 
-  # When a point is at infinitum, the other is the solution
   def add(p, q) when is_inf(p), do: q
   def add(p, q) when is_inf(q), do: p
 
-  # When both points coincide in the tangent and form a vertical line
   def add(%Point{y: 0} = p, p), do: %Point{p | x: nil, y: nil}
 
   # When both points coincide in the tangent to the curve
@@ -35,17 +33,14 @@ defmodule Point do
     new(x, y, p.a, p.b)
   end
 
-  # When both points have the same x, the addition is at infinitum
   def add(%Point{} = p, %Point{} = q)
     when on_same_curve(p, q) and p.x == q.x do
       Point.new(nil, nil, p.a, p.b)
   end
 
-  # the normal case of a line formed by 2 points that intersects the EC 3 times
-  # the third point is the addition of the other two
   def add(p, q) when on_same_curve(p, q) do
     s = (q.y - p.y) / (q.x - p.x)
-    x = (s*s) - p.x - q.x
+    x = (s * s) - p.x - q.x
     y = (s * (p.x - x)) - p.y
     new(x, y, p.a, p.b)
   end
