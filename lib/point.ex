@@ -1,24 +1,15 @@
 defmodule Point do
-  defstruct x: nil, y: nil, a: nil, b: nil
+  defstruct x: nil, y: nil, ec: nil
 
   defguard is_inf(p) when p.x == nil and p.y == nil
 
-  defguard on_same_curve(p, q) when p.a == q.a and p.b == q.b
+  defguard on_same_curve(p, q) when p.ec == q.ec
 
-  defp is_on_curve(p) when is_inf(p), do: p
-  defp is_on_curve(p) do
-    if (p.y**2 == p.x**3 + p.a*p.x + p.b), do: p,
-    else: raise("Invalid point, not on eliptic curve")
-  end
+  def new(x, y, %Ec{} = ec), do:
+    %Point{x: x, y: y, ec: ec} |> Ec.is_on_curve()
 
-  def new(x, y, a, b) do
-    %Point{x: x, y: y, a: a, b: b}
-      |> is_on_curve()
-  end
-
-  def are_equal(%Point{} = p, %Point{} = q) when on_same_curve(p, q) do
+  def are_equal(%Point{} = p, %Point{} = q) when on_same_curve(p, q), do:
     p.x == q.x and p.y == q.y
-  end
 
   def add(p, q) when is_inf(p), do: q
   def add(p, q) when is_inf(q), do: p
@@ -27,21 +18,21 @@ defmodule Point do
 
   # When both points coincide in the tangent to the curve
   def add(%Point{} = p, p) do
-    s = ((3 * p.x * p.x) + p.a) / (2 * p.y)
+    s = ((3 * p.x * p.x) + p.ec.a) / (2 * p.y)
     x = (s * s) - (2 * p.x)
     y = s * (p.x - x) - p.y
-    new(x, y, p.a, p.b)
+    new(x, y, p.ec)
   end
 
   def add(%Point{} = p, %Point{} = q)
     when on_same_curve(p, q) and p.x == q.x do
-      Point.new(nil, nil, p.a, p.b)
+      Point.new(nil, nil, p.ec)
   end
 
   def add(p, q) when on_same_curve(p, q) do
     s = (q.y - p.y) / (q.x - p.x)
     x = (s * s) - p.x - q.x
     y = (s * (p.x - x)) - p.y
-    new(x, y, p.a, p.b)
+    new(x, y, p.ec)
   end
 end
