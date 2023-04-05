@@ -3,6 +3,8 @@ defmodule Fifi do
 
   defstruct n: nil, k: nil
 
+  defguard same_size(fi, fa) when fi.k == fa.k
+
   defp validate_n({n, k}) when is_integer(n) and n>=0, do: {n, k}
   defp validate_n(_), do: raise("invalid integer")
 
@@ -34,13 +36,19 @@ defmodule Fifi do
 
   ######## ADDITION ########
 
-  def add(%Fifi{} = fa, %Fifi{} = fo) when fa.k == fo.k, do:
+  def add(%Fifi{} = fa, %Fifi{} = fo) when same_size(fa, fo), do:
     %{fa | n: (fa.n + fo.n) |> mod(fa.k)}
 
   def add(%Fifi{}, %Fifi{}), do:
     raise("Error: fifis of different size (prime)")
 
-  def subs(%Fifi{} = fa, %Fifi{} = fo) when fa.k == fo.k, do:
+  def add(%Fifi{} = fa, m) when is_number(m), do:
+    %{fa | n: (fa.n + m) |> mod(fa.k)}
+
+  def add(m, %Fifi{} = fa) when is_number(m), do:
+    %{fa | n: (fa.n + m) |> mod(fa.k)}
+
+  def subs(%Fifi{} = fa, %Fifi{} = fo) when same_size(fa, fo), do:
     add(fa, inverse(fo))
 
   ######## PRODUCT ########
@@ -51,7 +59,7 @@ defmodule Fifi do
   def multiply(%Fifi{} = fi, n) when is_integer(n), do:
     %{fi | n: (n * fi.n) |> mod(fi.k)}
 
-  def multiply(%Fifi{} = fa, %Fifi{} = fo) when fa.k == fo.k, do:
+  def multiply(%Fifi{} = fa, %Fifi{} = fo) when same_size(fa, fo), do:
     %{fa | n: (fa.n * fo.n) |> mod(fa.k)}
 
   def multiply(%Fifi{}, %Fifi{}), do:
@@ -65,7 +73,7 @@ defmodule Fifi do
 
   def exp(_, _), do: raise("Error: invalid input")
 
-  def divide(%Fifi{} = fa, %Fifi{} = fo) when fa.k == fo.k, do:
+  def divide(%Fifi{} = fa, %Fifi{} = fo) when same_size(fa, fo), do:
     multiply(fa, exp(fo, fo.k-2))
 
   ######## FORMATTING ########
@@ -81,6 +89,6 @@ defmodule Fifi do
   end
 
   defimpl String.Chars, for: Fifi do
-    def to_string(fi), do: "Fifi: {n: #{fi.n}, k: #{fi.k}}"
+    def to_string(fi), do: "Fifi: #{fi.n} on field k: #{fi.k}}"
   end
 end
