@@ -4,7 +4,7 @@ defmodule Pff do
   defined with coordinates set as finite field elemennts.
   """
 
-  defstruct x: nil, y: nil, ec: nil
+  defstruct x: nil, y: nil
 
   @ec %Ec{a: 0, b: 7}
 
@@ -19,10 +19,10 @@ defmodule Pff do
   def n(), do:
     0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
 
-  def inf_point(), do: %Pff{x: nil, y: nil, ec: @ec}
+  def inf_point(), do: %Pff{x: nil, y: nil}
 
   def new(x, y) do
-    %Pff{ x: Ff.new(x), y: Ff.new(y), ec: @ec }
+    %Pff{ x: Ff.new(x), y: Ff.new(y) }
     |> Pff.is_on_curve()
   end
 
@@ -56,7 +56,7 @@ defmodule Pff do
     s = p.x
       |> Ff.exp(2)
       |> Ff.multiply(3)
-      |> Ff.add(p.ec.a)
+      |> Ff.add(@ec.a)
       |> Ff.divide(Ff.multiply(p.y, 2))
     x = s
       |> Ff.exp(2)
@@ -115,10 +115,10 @@ defmodule Pff do
   #############################################################################
 
   defimpl String.Chars, for: Pff do
-    def to_string(%Pff{x: nil, y: nil} = p), do:
-      "Infinity point in elliptic curve #{p.ec}"
+    def to_string(%Pff{x: nil, y: nil}), do:
+      "Infinity point in elliptic curve secp256k1"
 
     def to_string(p), do:
-      "Pff: (#{p.x}, #{p.y}) on field: #{p.x.k} & ec: #{p.ec}"
+      "Pff: (#{p.x}, #{p.y}) on curve secp256k1"
   end
 end

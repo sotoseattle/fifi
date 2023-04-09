@@ -1,7 +1,8 @@
 defmodule Ff do
   @moduledoc """
   Finite Field Element defined over a specific size set,
-  compatible with secp256k1
+  compatible with secp256k1.
+  Size is a prime number so we can use Fermat's Little Theorem.
   """
 
   import Integer, only: [mod: 2]
@@ -16,7 +17,7 @@ defmodule Ff do
 
   def uno(), do: new(1)
 
-  def inverse(%Ff{} = f), do: %Ff{f | n: cast(-f.n)}
+  def neg(%Ff{} = f), do: %Ff{f | n: cast(-f.n)}
 
   #############################################################################
   #                                  ADDITION                                 #
@@ -32,7 +33,7 @@ defmodule Ff do
     new(fa.n + m)
 
   def subs(%Ff{} = fa, %Ff{} = fo), do:
-    add(fa, inverse(fo))
+    add(fa, neg(fo))
 
   #############################################################################
   #                              BINARY EXPANSION                             #
@@ -57,6 +58,8 @@ defmodule Ff do
 
   def multiply(%Ff{} = fa, %Ff{} = fo), do: new(fa.n * fo.n)
 
+  def inverse(%Ff{} = fi), do: Ff.exp(fi, @field_size-2)
+
   def exp(%Ff{}, 0), do: Ff.uno()
 
   def exp(%Ff{} = fa, m) when is_integer(m) and m>0, do:
@@ -71,7 +74,7 @@ defmodule Ff do
 
   def divide(%Ff{} = fa, %Ff{} = fo) do
     fo
-      |> exp(@field_size - 2)
+      |> inverse()
       |> multiply(fa)
   end
 
