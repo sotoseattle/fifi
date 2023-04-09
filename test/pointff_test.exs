@@ -59,8 +59,16 @@ defmodule PointffTest do
       assert dot(p, 7) == inf_point(ec)
     end
 
-    test "find G with brute approach", %{k: k, ec: ec} do
-      assert compute_G(new(15, 86, k, ec)) == 7
+    test "find order of the group by brute force", %{k: k, ec: ec} do
+      p = new(15, 86, k, ec)
+      inf = Pointff.inf_point(p.ec)
+
+      n = Enum.reduce_while(1..100, p, fn x, acc ->
+        if acc == inf, do: {:halt, x},
+        else: {:cont, Pointff.add(acc, p)}
+      end)
+
+      assert n == 7
     end
   end
 

@@ -21,8 +21,6 @@ defmodule Fifi do
   A finite field element is defined by a positive integer n in a set of size k
   """
 
-  ######## INITIALIZATION ########
-
   def new(n, k) do
     {n, k}
     |> validate_n
@@ -69,7 +67,9 @@ defmodule Fifi do
   end
 
 
-  ######## PRODUCT ########
+  #############################################################################
+  #                             MULTIPLICATION OPS                            #
+  #############################################################################
 
   def multiply(n, %Fifi{} = fi) when is_integer(n), do:
     %{fi | n: (n * fi.n) |> mod(fi.k)}
@@ -94,8 +94,9 @@ defmodule Fifi do
   def divide(%Fifi{} = fa, %Fifi{} = fo) when same_size(fa, fo), do:
     multiply(fa, exp(fo, fo.k-2))
 
-  ######## FORMATTING ########
-
+  #############################################################################
+  #                                FORMATING                                  #
+  #############################################################################
   defimpl Inspect, for: Fifi do
     def inspect(fi, _opts) do
       """

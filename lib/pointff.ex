@@ -23,19 +23,6 @@ defmodule Pointff do
       p.x == q.x and p.y == q.y
 
   #############################################################################
-  #                              BINARY EXPANSION                             #
-  #############################################################################
-
-  defp dot_bep(pointff, times) do
-    Util.bep(
-      pointff,
-      inf_point(pointff.ec),
-      times,
-      Util.rightmost_bit(times),
-      &Pointff.add(&1, &2))
-  end
-
-  #############################################################################
   #                                 ADDITION                                  #
   #############################################################################
 
@@ -73,7 +60,7 @@ defmodule Pointff do
       |> Fifi.subs(p.y)
       |> Fifi.divide(Fifi.subs(q.x, p.x))
     x = s
-      |> Util.bep(Fifi.uno(s.k), 2, Util.rightmost_bit(2), &Fifi.multiply(&1, &2))
+      |> Fifi.exp(2)
       |> Fifi.subs(p.x)
       |> Fifi.subs(q.x)
     y = p.x
@@ -83,24 +70,31 @@ defmodule Pointff do
     %Pointff{ p | x: x, y: y }
   end
 
+  #############################################################################
+  #                              BINARY EXPANSION                             #
+  #############################################################################
+
+  defp dot_bep(pointff, times) do
+    Util.bep(
+      pointff,
+      inf_point(pointff.ec),
+      times,
+      Util.rightmost_bit(times),
+      &Pointff.add(&1, &2))
+  end
+
+  #############################################################################
+  #                                DOT PRODUCT                                #
+  #############################################################################
+
   def dot(m, %Pointff{} = p) when is_integer(m) and m>1, do:
     dot_bep(p, m)
 
   def dot(%Pointff{} = p, m) when is_integer(m) and m>1, do:
     dot_bep(p, m)
 
-  def compute_G(%Pointff{} = p) do
-    inf = Pointff.inf_point(p.ec)
-
-    Enum.reduce_while(1..100, p, fn x, acc ->
-      if acc == inf, do: {:halt, x},
-      else: {:cont, Pointff.add(acc, p)}
-    end)
-  end
-
-
   #############################################################################
-  #                                FORMATING T                                #
+  #                                FORMATING                                  #
   #############################################################################
 
   defimpl String.Chars, for: Pointff do
