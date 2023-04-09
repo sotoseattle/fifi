@@ -1,5 +1,4 @@
 defmodule Pointff do
-  import Bitwise
 
   defstruct x: nil, y: nil, ec: nil
 
@@ -22,6 +21,19 @@ defmodule Pointff do
   def are_equal(%Pointff{} = p, %Pointff{} = q)
     when on_same_curve(p, q), do:
       p.x == q.x and p.y == q.y
+
+  #############################################################################
+  #                              BINARY EXPANSION                             #
+  #############################################################################
+
+  defp dot_bep(pointff, times) do
+    Util.bep(
+      pointff,
+      inf_point(pointff.ec),
+      times,
+      Util.rightmost_bit(times),
+      &Pointff.add(&1, &2))
+  end
 
   #############################################################################
   #                                 ADDITION                                  #
@@ -61,7 +73,7 @@ defmodule Pointff do
       |> Fifi.subs(p.y)
       |> Fifi.divide(Fifi.subs(q.x, p.x))
     x = s
-      |> Fifi.exp(2)
+      |> Util.bep(Fifi.uno(s.k), 2, Util.rightmost_bit(2), &Fifi.multiply(&1, &2))
       |> Fifi.subs(p.x)
       |> Fifi.subs(q.x)
     y = p.x
@@ -71,27 +83,11 @@ defmodule Pointff do
     %Pointff{ p | x: x, y: y }
   end
 
-  #############################################################################
-  #                    DOT PRODUCT USING BINARY EXPANSION                     #
-  #############################################################################
+  def dot(m, %Pointff{} = p) when is_integer(m) and m>1, do:
+    dot_bep(p, m)
 
-  defp rightmost_bit(int), do: int |> Integer.digits(2) |> List.last()
-
-  def dot(%Pointff{} = p, m) when is_integer(m) and m>1 do
-    dot(p, inf_point(p.ec), m, rightmost_bit(m))
-  end
-
-  defp dot(_, acc, 0, _), do: acc
-
-  defp dot(p, acc, m, 0) when m>0 do
-    m = m >>> 1
-    dot(add(p, p), acc, m, rightmost_bit(m))
-  end
-
-  defp dot(p, acc, m, 1) when m>0 do
-    m = m >>> 1
-    dot(add(p, p), Pointff.add(acc, p), m, rightmost_bit(m))
-  end
+  def dot(%Pointff{} = p, m) when is_integer(m) and m>1, do:
+    dot_bep(p, m)
 
   def compute_G(%Pointff{} = p) do
     inf = Pointff.inf_point(p.ec)

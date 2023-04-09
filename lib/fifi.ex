@@ -31,6 +31,9 @@ defmodule Fifi do
     |> create_fifi
   end
 
+  def uno(k), do:
+    %Fifi{n: 1, k: k}
+
   def inverse(%Fifi{} = fi), do:
     %Fifi{n: mod(-fi.n, fi.k), k: fi.k}
 
@@ -51,6 +54,21 @@ defmodule Fifi do
   def subs(%Fifi{} = fa, %Fifi{} = fo) when same_size(fa, fo), do:
     add(fa, inverse(fo))
 
+
+  #############################################################################
+  #                              BINARY EXPANSION                             #
+  #############################################################################
+
+  defp exp_bep(fifi, exponent) do
+    Util.bep(
+      fifi,
+      Fifi.uno(fifi.k),
+      exponent,
+      Util.rightmost_bit(exponent),
+      &Fifi.multiply(&1, &2))
+  end
+
+
   ######## PRODUCT ########
 
   def multiply(n, %Fifi{} = fi) when is_integer(n), do:
@@ -66,10 +84,10 @@ defmodule Fifi do
     raise("Error: fifis of different size (prime)")
 
   def exp(%Fifi{} = fa, m) when is_integer(m) and m>=0, do:
-    %{fa | n: (fa.n ** m) |> mod(fa.k)}
+    exp_bep(fa, m)
 
   def exp(%Fifi{} = fa, m) when is_integer(m) and m<0, do:
-    %{fa | n: (fa.n ** (fa.k-1+m)) |> mod(fa.k)}
+    exp_bep(fa, fa.k-1+m)
 
   def exp(_, _), do: raise("Error: invalid input")
 
