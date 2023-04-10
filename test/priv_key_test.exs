@@ -8,7 +8,7 @@ defmodule PrivKeyTest do
 
       message = :crypto.hash(:sha256, "hola caracola") |> Util.to_int
 
-      signature = PrivKey.sign(message, sec_key)
+      signature = PrivKey.sign(sec_key, message)
 
       pub_key = PrivKey.pub_key(sec_key)
 

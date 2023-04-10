@@ -21,6 +21,10 @@ defmodule Util do
     bep(fun.(p, p), fun.(acc, p), m, rightmost_bit(m), fun)
   end
 
+  #############################################################################
+  #                              BINARY EXPANSION                             #
+  #############################################################################
+
   def inverse_big_int(big_n, big_e) do
     Util.bep(
         big_n,
@@ -30,8 +34,8 @@ defmodule Util do
         &mod(&1 * &2, big_e))
   end
 
+  # the same as Base.encode16 |> Integer.parse(16) ...
   def to_int(bin) do
     :binary.decode_unsigned(bin, :big)
-    # bin |> Base.encode16 |> Integer.parse(16) |> elem(0)
   end
 end

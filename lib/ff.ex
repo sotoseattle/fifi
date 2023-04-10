@@ -9,6 +9,7 @@ defmodule Ff do
 
   defstruct n: nil
 
+  # The size of the Finite Field is enormous, and a prime too
   @field_size 2**256 - 2 **32 - 977
 
   defp cast(n), do: mod(n, @field_size)
@@ -17,6 +18,9 @@ defmodule Ff do
 
   def uno(), do: new(1)
 
+  @doc """
+  The negative of a number is positive because of mod operation
+  """
   def neg(%Ff{} = f), do: %Ff{f | n: cast(-f.n)}
 
   #############################################################################

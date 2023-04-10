@@ -2,7 +2,7 @@ defmodule PrivKey do
   import Integer, only: [mod: 2]
 
   def pub_key(private_key) do
-    private_key |> Pff.dot(Pff.g())
+    private_key |> PubKey.dot(PubKey.g())
   end
 
   def hasha256x2(message) do
@@ -13,7 +13,7 @@ defmodule PrivKey do
   # Implements RFC 6979 {r,s} values from deterministically generated k
   # Added s > n/2 because "It turns out that using low values of s will get
   # miner nodes to relay transactions instead of commit them."
-  def sign(hash, private_key) do
+  def sign(private_key, hash) do
     xoxo = :binary.encode_unsigned(hash)
 
     v = :binary.copy(<<1>>, 32)
@@ -38,8 +38,8 @@ defmodule PrivKey do
       )
 
     v = :crypto.mac(:hmac, :sha256, k, v)
-    n = Pff.n()
-    g = Pff.g()
+    n = PubKey.n()
+    g = PubKey.g()
 
     Enum.reduce_while(0..1000, {k, v}, fn i, {k, v} ->
       if i == 1000, do: throw({:error, "tried 1000 k values, all were invalid"})
@@ -47,7 +47,7 @@ defmodule PrivKey do
 
       case v do
         <<t::big-size(256)>> when 0 < t and t < n ->
-          r = Pff.dot(t, g).x.n
+          r = PubKey.dot(t, g).x.n
 
           s = (Util.inverse_big_int(t, n) * (hash + r * private_key)) |> mod(n)
 
