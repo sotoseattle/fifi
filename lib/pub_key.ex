@@ -158,6 +158,24 @@ defmodule PubKey do
   end
 
   #############################################################################
+  #                              SERIALIZATION                                #
+  #############################################################################
+
+  def serialize(%PubKey{} = p, :sec, compress: false) do
+    <<0x04, p.x.n::big-size(256), p.y.n::big-size(256)>>
+    |> :binary.encode_hex
+  end
+
+  def serialize(%PubKey{} = p, :sec, compress: true) do
+    header = if mod(p.y.n, 2) == 0, do: 0x02, else: 0x03
+    <<header, p.x.n::big-size(256)>>
+    |> :binary.encode_hex
+  end
+
+
+
+
+  #############################################################################
   #                                FORMATING                                  #
   #############################################################################
 
