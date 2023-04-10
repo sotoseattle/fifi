@@ -8,7 +8,6 @@ defmodule PffTest do
       assert Pff.is_on_curve(g()) == g()
     end
 
-    @tag runnable: true
     test "n times g is the infinite point" do
       assert dot(g(), n()) == inf_point()
     end

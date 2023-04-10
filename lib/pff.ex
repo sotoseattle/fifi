@@ -110,6 +110,12 @@ defmodule Pff do
   def dot(%Pff{} = p, m) when is_integer(m) and m>1, do:
     dot_bexp(p, m)
 
+  def dot(%Ff{n: m}, %Pff{} = p), do:
+    dot_bexp(p, m)
+
+  def dot(%Pff{} = p, %Ff{n: m}), do:
+    dot_bexp(p, m)
+
   #############################################################################
   #                                FORMATING                                  #
   #############################################################################

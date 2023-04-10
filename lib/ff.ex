@@ -54,11 +54,14 @@ defmodule Ff do
 
   def multiply(n, %Ff{} = fi) when is_integer(n), do: new(n * fi.n)
 
-  def multiply(%Ff{} = fi, n) when is_integer(n), do: new(n * fi.n)
+  def multiply(%Ff{} = fi, n) when is_integer(n), do: multiply(n, fi)
 
   def multiply(%Ff{} = fa, %Ff{} = fo), do: new(fa.n * fo.n)
 
-  def inverse(%Ff{} = fi), do: Ff.exp(fi, @field_size-2)
+  def inverse(%Ff{} = fi) do
+    e = @field_size - 2
+    Ff.exp(fi, e)
+  end
 
   def exp(%Ff{}, 0), do: Ff.uno()
 
