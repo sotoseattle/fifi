@@ -49,7 +49,7 @@ defmodule PrivKey do
         <<t::big-size(256)>> when 0 < t and t < n ->
           r = PubKey.dot(t, g).x.n
 
-          s = (Util.inverse_big_int(t, n) * (hash + r * private_key)) |> mod(n)
+          s = (PubKey.inverse_big_int(t, n) * (hash + r * private_key)) |> mod(n)
 
           if r == 0 or s == 0 or s > n / 2,
             do: {:cont, {k, v}},

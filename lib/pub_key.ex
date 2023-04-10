@@ -101,6 +101,15 @@ defmodule PubKey do
       &PubKey.add(&1, &2))
   end
 
+  def inverse_big_int(big_int, big_e) do
+    Util.bep(
+        big_int,
+        1,
+        big_e-2,
+        Util.rightmost_bit(big_e-2),
+        &mod(&1 * &2, big_e))
+  end
+
   #############################################################################
   #                                DOT PRODUCT                                #
   #############################################################################
@@ -128,7 +137,7 @@ defmodule PubKey do
   def verify_signature(pub_key, message, signature) do
     n = PubKey.n()
 
-    s_inv = Util.inverse_big_int(signature.s, n)
+    s_inv = inverse_big_int(signature.s, n)
     u = message * s_inv |> mod(n)
     v = signature.r * s_inv |> mod(n)
 
