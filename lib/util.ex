@@ -1,5 +1,4 @@
 defmodule Util do
-  import Integer, only: [mod: 2]
   import Bitwise
 
   def rightmost_bit(int) do

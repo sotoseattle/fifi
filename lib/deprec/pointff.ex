@@ -15,7 +15,7 @@ defmodule Pointff do
       x: Fifi.new(x, k),
       y: Fifi.new(y, k),
       ec: ec}
-    |> Ec.is_on_curve()
+    |> Ec.on_curve()
   end
 
   def are_equal(%Pointff{} = p, %Pointff{} = q)

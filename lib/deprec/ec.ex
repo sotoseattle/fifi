@@ -8,14 +8,14 @@ defmodule Ec do
     %Ec{a: a, b: b}
   end
 
-  def is_on_curve(%Point{x: nil, y: nil} = p), do: p
-  def is_on_curve(%Point{x: x, y: y, ec: c} = p) do
+  def on_curve(%Point{x: nil, y: nil} = p), do: p
+  def on_curve(%Point{x: x, y: y, ec: c} = p) do
     if (y**2 == x**3 + c.a*x + c.b), do: p,
     else: raise("Invalid point, not on eliptic curve")
   end
 
-  def is_on_curve(%Pointff{ x: %Fifi{n: nil}, y: %Fifi{n: nil}} = p), do: p
-  def is_on_curve(%Pointff{x: x, y: y, ec: c} = p) do
+  def on_curve(%Pointff{ x: %Fifi{n: nil}, y: %Fifi{n: nil}} = p), do: p
+  def on_curve(%Pointff{x: x, y: y, ec: c} = p) do
     left = Fifi.exp(y, 2)
     right = Fifi.exp(x, 3)
       |> Fifi.add(Fifi.multiply(x, c.a))

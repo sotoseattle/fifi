@@ -5,7 +5,7 @@ defmodule PrivKey do
     private_key |> PubKey.dot(PubKey.g())
   end
 
-  def hasha256x2(message) do
+  def hashash256(message) do
     :crypto.hash(:sha256, :crypto.hash(:sha256, message))
   end
 
@@ -38,7 +38,7 @@ defmodule PrivKey do
       )
 
     v = :crypto.mac(:hmac, :sha256, k, v)
-    n = PubKey.n()
+    ng = PubKey.ng()
     g = PubKey.g()
 
     Enum.reduce_while(0..1000, {k, v}, fn i, {k, v} ->
@@ -46,12 +46,12 @@ defmodule PrivKey do
       v = :crypto.mac(:hmac, :sha256, k, v)
 
       case v do
-        <<t::big-size(256)>> when 0 < t and t < n ->
+        <<t::big-size(256)>> when 0 < t and t < ng ->
           r = PubKey.dot(t, g).x.n
 
-          s = (PubKey.inverse_big_int(t, n) * (hash + r * private_key)) |> mod(n)
+          s = (PubKey.inverse_big_int(t, ng) * (hash + r * private_key)) |> mod(ng)
 
-          if r == 0 or s == 0 or s > n / 2,
+          if r == 0 or s == 0 or s > ng / 2,
             do: {:cont, {k, v}},
             else: {:halt, Sign.new(r, s)}
 

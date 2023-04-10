@@ -1,58 +1,67 @@
 defmodule PubKey do
   import Integer, only: [mod: 2]
   @moduledoc """
-  Public keys are point on the curve secp256k1,
-  defined with coordinates set as finite field elements.
+  Public keys are points on the curve secp256k1,
+  its coordinates are finite field elements.
   """
 
   defstruct x: nil, y: nil
 
-  @ec %Ec{a: 0, b: 7}
+  #############################################################################
+  #                               PARAMETERS                                  #
+  #############################################################################
 
-  defguard is_inf(p) when p.x == nil and p.y == nil
+  @ec %Ec{a: 0, b: 7}
 
   def g() do
     new(
       0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,
       0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8)
-  end
+    end
 
-  def n(), do:
+  # Order size of all the dot products over g. A prime number.
+  def ng(), do:
     0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
+
+  defguard is_inf(p) when p.x == nil and p.y == nil
 
   def inf_point(), do: %PubKey{x: nil, y: nil}
 
-  def new(x, y) do
+  def new(x, y) when is_integer(x) and is_integer(y) do
     %PubKey{ x: Ff.new(x), y: Ff.new(y) }
-    |> PubKey.is_on_curve()
+    |> on_curve()
   end
 
-  def are_equal(%PubKey{} = p, %PubKey{} = q), do:
-      p.x == q.x and p.y == q.y
+  def new(%Ff{} = x, %Ff{} = y) do
+    %PubKey{ x: x, y: y }
+    |> on_curve()
+  end
 
   # y^2 == x^3 + x * c.a + c.b
-  def is_on_curve(%PubKey{x: nil, y: nil} = p), do: p
-  def is_on_curve(%PubKey{x: x, y: y} = p) do
+  def on_curve(%PubKey{x: nil, y: nil} = p), do: p
+  def on_curve(%PubKey{x: x, y: y} = p) do
     left = Ff.exp(y, 2)
     right = Ff.exp(x, 3)
       |> Ff.add(Ff.multiply(x, @ec.a))
       |> Ff.add(@ec.b)
     if left == right, do: p,
-    else: raise("Invalid point, not on eliptic curve")
+    else: raise("Error: Point is not on eliptic curve SECP256K1")
   end
 
   #############################################################################
   #                                 ADDITION                                  #
+  #  The two sumands form a line that intersects the curve in a third one,    #
+  #  which is the result of the addition.                                     #
   #############################################################################
 
+  # When a point is the infinite point
   def add(p, q) when is_inf(p), do: q
   def add(p, q) when is_inf(q), do: p
 
-  def add(%PubKey{y: y} = p, p) when y.n == 0 do
-    inf_point()
-  end
+  # When both points coincide and y = 0
+  def add(%PubKey{y: y} = p, p) when y.n == 0, do: inf_point()
 
-# When both points coincide in the tangent to the curve
+  # When both points coincide anywhere in the curve (form a tangent)
   def add(%PubKey{} = p, p) do
     s = p.x
       |> Ff.exp(2)
@@ -66,13 +75,15 @@ defmodule PubKey do
       |> Ff.subs(x)
       |> Ff.multiply(s)
       |> Ff.subs(p.y)
-    %PubKey{ p | x: x, y: y }
+    new(x, y)
   end
 
+  # When both points are in a vertical line
   def add(%PubKey{} = p, %PubKey{} = q) when p.x == q.x do
       inf_point()
   end
 
+  # Any other case, the non-edge case
   def add(p, q) do
     s = q.y
       |> Ff.subs(p.y)
@@ -85,22 +96,26 @@ defmodule PubKey do
       |> Ff.subs(x)
       |> Ff.multiply(s)
       |> Ff.subs(p.y)
-    %PubKey{ p | x: x, y: y }
+    new(x, y)
   end
 
   #############################################################################
   #                              BINARY EXPANSION                             #
   #############################################################################
 
+  # Binary expansion of iterative addition of a public key point
   defp dot_bexp(point_ff, times) do
     Util.bep(
       point_ff,
       inf_point(),
       times,
       Util.rightmost_bit(times),
-      &PubKey.add(&1, &2))
+      &add(&1, &2))
   end
 
+  # Binary expansion of iterative product of a big number. It computes
+  #   - the inverse through exp -2
+  #   - the mod over N (order size of G)
   def inverse_big_int(big_int, big_e) do
     Util.bep(
         big_int,
@@ -114,32 +129,26 @@ defmodule PubKey do
   #                                DOT PRODUCT                                #
   #############################################################################
 
-  def dot(m, %PubKey{} = p) when is_integer(m) and m>1, do:
-    dot_bexp(p, m)
+  def dot(m, %PubKey{} = p) when is_integer(m) and m>1, do: dot_bexp(p, m)
 
-  def dot(%PubKey{} = p, m) when is_integer(m) and m>1, do:
-    dot_bexp(p, m)
+  def dot(%PubKey{} = p, m) when is_integer(m) and m>1, do: dot_bexp(p, m)
 
-  def dot(%Ff{n: m}, %PubKey{} = p), do:
-    dot_bexp(p, m)
+  def dot(%Ff{n: m}, %PubKey{} = p), do: dot_bexp(p, m)
 
-  def dot(%PubKey{} = p, %Ff{n: m}), do:
-    dot_bexp(p, m)
+  def dot(%PubKey{} = p, %Ff{n: m}), do: dot_bexp(p, m)
 
   #############################################################################
   #                                SIGNATURE                                  #
+  #   Verify that a message was created by the owner of a private key         #
+  #   through the use of its related public key and signature data.           #
   #############################################################################
 
-  @doc """
-  Verify that a message was created by the owner of a private key,
-  through the use of its related public key and signature data.
-  """
   def verify_signature(pub_key, message, signature) do
-    n = PubKey.n()
+    ng = PubKey.ng()
 
-    s_inv = inverse_big_int(signature.s, n)
-    u = message * s_inv |> mod(n)
-    v = signature.r * s_inv |> mod(n)
+    s_inv = inverse_big_int(signature.s, ng)
+    u = message * s_inv |> mod(ng)
+    v = signature.r * s_inv |> mod(ng)
 
     total = PubKey.add(
       PubKey.dot(u, PubKey.g()),

@@ -6,7 +6,7 @@ defmodule Point do
   defguard on_same_curve(p, q) when p.ec == q.ec
 
   def new(x, y, %Ec{} = ec), do:
-    %Point{x: x, y: y, ec: ec} |> Ec.is_on_curve()
+    %Point{x: x, y: y, ec: ec} |> Ec.on_curve()
 
   def are_equal(%Point{} = p, %Point{} = q) when on_same_curve(p, q), do:
     p.x == q.x and p.y == q.y
