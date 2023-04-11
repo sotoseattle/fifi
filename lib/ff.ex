@@ -10,6 +10,8 @@ defmodule Ff do
 
   @field_size 2**256 - 2 **32 - 977
 
+  def field_size(), do: @field_size
+
   defp cast(n), do: mod(n, @field_size)
 
   def new(n), do: %Ff{n: cast(n)}

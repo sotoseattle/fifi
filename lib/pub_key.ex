@@ -37,14 +37,22 @@ defmodule PubKey do
     |> on_curve()
   end
 
-  # y^2 == x^3 + x * c.a + c.b
-  def on_curve(%PubKey{x: nil, y: nil} = p), do: p
-  def on_curve(%PubKey{x: x, y: y} = p) do
-    left = Ff.exp(y, 2)
-    right = Ff.exp(x, 3)
+  #############################################################################
+  #                        POINTS ON CURVE COMPUTATION                        #
+  #  y^2 == x^3 + x * c.a + c.b                                               #
+  #############################################################################
+
+  defp eq_left_side(y), do: Ff.exp(y, 2)
+
+  def eq_right_side(x) do
+    Ff.exp(x, 3)
       |> Ff.add(Ff.multiply(x, @ec.a))
       |> Ff.add(@ec.b)
-    if left == right, do: p,
+  end
+
+  def on_curve(%PubKey{x: nil, y: nil} = p), do: p
+  def on_curve(%PubKey{x: x, y: y} = p) do
+    if eq_left_side(y) == eq_right_side(x), do: p,
     else: raise("Error: Point is not on eliptic curve SECP256K1")
   end
 
@@ -158,7 +166,7 @@ defmodule PubKey do
   end
 
   #############################################################################
-  #                              SERIALIZATION                                #
+  #                          SERIALIZATION SEC                                #
   #############################################################################
 
   def serialize(%PubKey{} = p, :sec, compress: false) do
@@ -166,14 +174,50 @@ defmodule PubKey do
     |> :binary.encode_hex
   end
 
-  def serialize(%PubKey{} = p, :sec, compress: true) do
-    header = if mod(p.y.n, 2) == 0, do: 0x02, else: 0x03
-    <<header, p.x.n::big-size(256)>>
-    |> :binary.encode_hex
+  def serialize(%PubKey{} = p, :sec, compress: true) 
+    when Integer.is_even(p.y.n) do
+      <<0x02, p.x.n::big-size(256)>> |> :binary.encode_hex
   end
 
+  def serialize(%PubKey{} = p, :sec, compress: true) do
+      <<0x03, p.x.n::big-size(256)>> |> :binary.encode_hex
+  end
+  
+  def parse("02" <> hex, :sec) do
+    <<x::big-size(256)>> = :binary.decode_hex(hex)
+    y = x |> derive_y() |> choose_y("02")
+    PubKey.new(x, y)
+  end
+  
+  def parse("03" <> hex, :sec) do
+    <<x::big-size(256)>> = :binary.decode_hex(hex)    
+    y = x |> derive_y() |> choose_y("03")
+    PubKey.new(x, y)
+  end
 
+  def parse("04" <> hex, :sec) do
+    <<x::big-size(256), y::big-size(256)>> = :binary.decode_hex(hex)
+    PubKey.new(x, y)
+  end
 
+  defp derive_y(x) do
+    Ff.new(x)
+      |> eq_right_side() 
+      |> Ff.exp_bexp(Integer.floor_div(Ff.field_size + 1, 4)) 
+      |> Map.fetch!(:n)
+  end
+
+  defp pick_other(y) do
+    Ff.new(y)
+      |> Ff.neg 
+      |> Ff.add(Ff.field_size) 
+      |> Map.fetch!(:n)
+  end
+
+  defp choose_y(y, "03") when Integer.is_even(y), do: pick_other(y)
+  defp choose_y(y, "03"), do: y
+  defp choose_y(y, "02") when Integer.is_even(y), do: y
+  defp choose_y(y, "02"), do: pick_other(y)
 
   #############################################################################
   #                                FORMATING                                  #
