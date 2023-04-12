@@ -166,60 +166,6 @@ defmodule PubKey do
   end
 
   #############################################################################
-  #                          SERIALIZATION SEC                                #
-  #############################################################################
-
-  def serialize(%PubKey{} = p, :sec, compress: false) do
-    <<0x04, p.x.n::big-size(256), p.y.n::big-size(256)>>
-    |> :binary.encode_hex
-  end
-
-  def serialize(%PubKey{} = p, :sec, compress: true) 
-    when Integer.is_even(p.y.n) do
-      <<0x02, p.x.n::big-size(256)>> |> :binary.encode_hex
-  end
-
-  def serialize(%PubKey{} = p, :sec, compress: true) do
-      <<0x03, p.x.n::big-size(256)>> |> :binary.encode_hex
-  end
-  
-  def parse("02" <> hex, :sec) do
-    <<x::big-size(256)>> = :binary.decode_hex(hex)
-    y = x |> derive_y() |> choose_y("02")
-    PubKey.new(x, y)
-  end
-  
-  def parse("03" <> hex, :sec) do
-    <<x::big-size(256)>> = :binary.decode_hex(hex)    
-    y = x |> derive_y() |> choose_y("03")
-    PubKey.new(x, y)
-  end
-
-  def parse("04" <> hex, :sec) do
-    <<x::big-size(256), y::big-size(256)>> = :binary.decode_hex(hex)
-    PubKey.new(x, y)
-  end
-
-  defp derive_y(x) do
-    Ff.new(x)
-      |> eq_right_side() 
-      |> Ff.exp_bexp(Integer.floor_div(Ff.field_size + 1, 4)) 
-      |> Map.fetch!(:n)
-  end
-
-  defp pick_other(y) do
-    Ff.new(y)
-      |> Ff.neg 
-      |> Ff.add(Ff.field_size) 
-      |> Map.fetch!(:n)
-  end
-
-  defp choose_y(y, "03") when Integer.is_even(y), do: pick_other(y)
-  defp choose_y(y, "03"), do: y
-  defp choose_y(y, "02") when Integer.is_even(y), do: y
-  defp choose_y(y, "02"), do: pick_other(y)
-
-  #############################################################################
   #                                FORMATING                                  #
   #############################################################################
 

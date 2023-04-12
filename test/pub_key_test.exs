@@ -2,7 +2,6 @@ defmodule PubKeyTest do
   use ExUnit.Case
   import PubKey
 
-
   describe "Secp256k1 as defined is correct" do
     test "the g point is on the Secp256k1 curve" do
       assert PubKey.on_curve(g()) == g()
@@ -38,50 +37,6 @@ defmodule PubKeyTest do
       s = 0xc7207fee197d27c618aea621406f6bf5ef6fca38681d82b2f06fddbdce6feab6
 
       assert PubKey.verify_signature(p, z, Sign.new(r, s))
-    end
-  end
-
-  describe "serialize SEC" do
-    test "serialize uncompressed and parse back" do
-      p = PubKey.dot(5_000, PubKey.g())
-      p_comp = serialize(p, :sec, compress: false) 
-      
-      assert p_comp ==
-      "04FFE558E388852F0120E46AF2D1B370F85854A8EB0841811ECE0E3E03D282D57C315DC72890A4F10A1481C031B03B351B0DC79901CA18A00CF009DBDB157A1D10"
-      assert PubKey.parse(p_comp, :sec) == p
-
-      p = PubKey.dot(2018**5, PubKey.g())
-      p_comp = serialize(p, :sec, compress: false)
-      assert p_comp ==
-      "04027F3DA1918455E03C46F659266A1BB5204E959DB7364D2F473BDF8F0A13CC9DFF87647FD023C13B4A4994F17691895806E1B40B57F4FD22581A4F46851F3B06"
-      assert PubKey.parse(p_comp, :sec) == p
-
-      p = PubKey.dot(0xdeadbeef12345, PubKey.g())
-      p_comp = serialize(p, :sec, compress: false)
-      assert p_comp ==
-      "04D90CD625EE87DD38656DD95CF79F65F60F7273B67D3096E68BD81E4F5342691F842EFA762FD59961D0E99803C61EDBA8B3E3F7DC3A341836F97733AEBF987121"
-      assert PubKey.parse(p_comp, :sec) == p
-    end
-
-    @tag runnable: true
-    test "compressed" do
-      p = PubKey.dot(5_001, PubKey.g())
-      p_comp = serialize(p, :sec, compress: true)
-      assert p_comp ==
-      "0357A4F368868A8A6D572991E484E664810FF14C05C0FA023275251151FE0E53D1"
-      assert PubKey.parse(p_comp, :sec) == p
-
-      p = PubKey.dot(2019**5, PubKey.g())
-      p_comp = serialize(p, :sec, compress: true)
-      assert p_comp ==
-      "02933EC2D2B111B92737EC12F1C5D20F3233A0AD21CD8B36D0BCA7A0CFA5CB8701"
-      assert PubKey.parse(p_comp, :sec) == p
-
-      p = PubKey.dot(0xdeadbeef54321, PubKey.g())
-      p_comp = serialize(p, :sec, compress: true)
-      assert p_comp ==
-      "0296BE5B1292F6C856B3C5654E886FC13511462059089CDF9C479623BFCBE77690"
-      assert PubKey.parse(p_comp, :sec) == p
     end
   end
 end
