@@ -64,8 +64,8 @@ defmodule Serialize do
   defp choose_y(y, "02") when Integer.is_even(y), do: y
   defp choose_y(y, "02"), do: pick_other(y)
 
-  defp prepend_net(bin, true), do: <<0x6f, bin::binary>>
-  defp prepend_net(bin, false), do: <<0x00, bin::binary>>
+  defp prepend_addr_net(bin, true), do: <<0x6f, bin::binary>>
+  defp prepend_addr_net(bin, false), do: <<0x00, bin::binary>>
 
   defp checksum_b58(bin) do
     checksum = bin |> Util.hashash256() |> binary_part(0, 4)
@@ -80,7 +80,7 @@ defmodule Serialize do
       |> as_SEC(compress: bool1)
       |> :binary.decode_hex
       |> Util.hash160
-      |> prepend_net(bool2)
+      |> prepend_addr_net(bool2)
       |> checksum_b58
   end
 
@@ -113,7 +113,7 @@ defmodule Serialize do
 
   def hex_2_b58(hex) do
     hex
-      |> get_prefix_0s(0)
+      |> get_prefix_00(0)
       |> translate_hex
       |> add_prefix_1
   end
@@ -137,4 +137,22 @@ defmodule Serialize do
     <<0x30, byte_size(bin), bin::binary>> |> :binary.encode_hex
   end
 
+
+  #############################################################################
+  #               SERIALIZATION OF PRIVATE KEY • WIF FORMAT                   #
+  #############################################################################
+
+  defp prepend_wif_net(e, true), do: <<0xef, e::binary>>
+  defp prepend_wif_net(e, false), do: <<0x80, e::binary>>
+  
+  defp append_addr_comp(e, true), do: <<e::binary, 0x01>>
+  defp append_addr_comp(e, false), do: e
+  
+  def as_WIF(e, testnet: bool1, addr_compressed: bool2) do
+    <<e::big-size(256)>>
+    |> prepend_wif_net(bool1)
+    |> append_addr_comp(bool2)
+    |> checksum_b58
+  end
+  
 end

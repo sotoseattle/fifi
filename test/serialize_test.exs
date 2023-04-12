@@ -45,7 +45,6 @@ defmodule SerializeTest do
   end
 
   describe "serialize addresses of public keys with SEC into 20 bytes and base58" do
-    @tag runnable: true
     test "basic case" do
       p = PubKey.dot(5_002, PubKey.g())
       p_comp = Serialize.address(p, compress: false, testnet: true) 
@@ -87,6 +86,19 @@ defmodule SerializeTest do
     test "maintain the leading zeroes" do
       hex = "000000c7207fee197d27c618aea621406f6bf5ef6fca38681d82b2f06fddbdce6feab6"
       assert Serialize.hex_2_b58(hex) == "111EQJsjkd6JaGwxrjEhfeqPenqHwrBmPQZjJGNSCHBkcF7"
+    end
+  end
+
+  describe "serialize a private key using WIF format" do
+    test "basic case" do
+      e_ser = Serialize.as_WIF(5003, testnet: true, addr_compressed: true) 
+      assert e_ser == "cMahea7zqjxrtgAbB7LSGbcQUr1uX1ojuat9jZodMN8rFTv2sfUK" 
+      
+      e_ser = Serialize.as_WIF(2021**5, testnet: true, addr_compressed: false) 
+      assert e_ser == "91avARGdfge8E4tZfYLoxeJ5sGBdNJQH4kvjpWAxgzczjbCwxic" 
+      
+      e_ser = Serialize.as_WIF(0x54321deadbeef, testnet: false, addr_compressed: true) 
+      assert e_ser == "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgiuQJv1h8Ytr2S53a" 
     end
   end
 end
