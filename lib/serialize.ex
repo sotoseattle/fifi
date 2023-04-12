@@ -11,7 +11,7 @@ defmodule Serialize do
   #                          SEC - PUBLIC KEY                                 #
   #                             65 bytes -> uncompressed (x & y)              #
   #                             33 bytes -> compressed (x)                    #
-  #               address ----> 20 bytes -> compressed & hashed & base58      #
+  #               address ----> 20 bytes -> hashed & base58                   #
   #############################################################################
 
   def as_SEC(%PubKey{} = p, compress: false) do
@@ -64,8 +64,6 @@ defmodule Serialize do
   defp choose_y(y, "02") when Integer.is_even(y), do: y
   defp choose_y(y, "02"), do: pick_other(y)
 
-
-
   defp prepend_net(bin, true), do: <<0x6f, bin::binary>>
   defp prepend_net(bin, false), do: <<0x00, bin::binary>>
 
@@ -87,27 +85,8 @@ defmodule Serialize do
   end
 
 
-
   #############################################################################
-  #               SERIALIZATION OF SIGNATURES • DER FORMAT                    #
-  #############################################################################
-
-  defp der_prefix(bin, first) when first <= 80, do: <<byte_size(bin)>>
-  defp der_prefix(bin, _), do: <<byte_size(bin) + 1, 0>>
-  
-  defp derify(bin) do
-    <<0x02>> <>
-    der_prefix(bin, :binary.first(bin)) <>
-    bin
-  end
-
-  def as_DER(%Sign{r: r, s: s}, :der) do
-    bin = derify(<<r::big-size(256)>>) <> derify(<<s::big-size(256)>>)
-    <<0x30, byte_size(bin), bin::binary>> |> :binary.encode_hex
-  end
-
-  #############################################################################
-  #                   CONVERSION TO BASE 58 • PUBLIC KEYS                     #
+  #                          CONVERSION TO BASE 58                            #
   #   Like base 64 but without 0 and letters O, l, I (to avoid confussion)    #
   #############################################################################
 
@@ -137,6 +116,25 @@ defmodule Serialize do
       |> get_prefix_0s(0)
       |> translate_hex
       |> add_prefix_1
+  end
+
+  
+  #############################################################################
+  #               SERIALIZATION OF SIGNATURES • DER FORMAT                    #
+  #############################################################################
+
+  defp der_prefix(bin, first) when first <= 80, do: <<byte_size(bin)>>
+  defp der_prefix(bin, _), do: <<byte_size(bin) + 1, 0>>
+  
+  defp derify(bin) do
+    <<0x02>> <>
+    der_prefix(bin, :binary.first(bin)) <>
+    bin
+  end
+
+  def as_DER(%Sign{r: r, s: s}, :der) do
+    bin = derify(<<r::big-size(256)>>) <> derify(<<s::big-size(256)>>)
+    <<0x30, byte_size(bin), bin::binary>> |> :binary.encode_hex
   end
 
 end
