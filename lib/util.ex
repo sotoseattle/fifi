@@ -24,4 +24,13 @@ defmodule Util do
   def to_int(bin) do
     :binary.decode_unsigned(bin, :big)
   end
+
+
+  def hashash256(message) do
+    :crypto.hash(:sha256, :crypto.hash(:sha256, message))
+  end
+
+  def hash160(message) do
+    :crypto.hash(:ripemd160, :crypto.hash(:sha256, message))
+  end
 end

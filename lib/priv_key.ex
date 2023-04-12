@@ -5,10 +5,6 @@ defmodule PrivKey do
     private_key |> PubKey.dot(PubKey.g())
   end
 
-  def hashash256(message) do
-    :crypto.hash(:sha256, :crypto.hash(:sha256, message))
-  end
-
   # Adapted from Curvy: https://github.com/libitx/curvy (deterministic_k))
   # Implements RFC 6979 {r,s} values from deterministically generated k
   # Added s > n/2 because "It turns out that using low values of s will get

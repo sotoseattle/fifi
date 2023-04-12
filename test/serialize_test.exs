@@ -44,6 +44,24 @@ defmodule SerializeTest do
     end
   end
 
+  describe "serialize addresses of public keys with SEC into 20 bytes and base58" do
+    @tag runnable: true
+    test "basic case" do
+      p = PubKey.dot(5_002, PubKey.g())
+      p_comp = Serialize.address(p, compress: false, testnet: true) 
+      assert p_comp == "mmTPbXQFxboEtNRkwfh6K51jvdtHLxGeMA"
+
+      p = PubKey.dot(2020**5, PubKey.g())
+      p_comp = Serialize.address(p, compress: true, testnet: true) 
+      assert p_comp == "mopVkxp8UhXqRYbCYJsbeE1h1fiF64jcoH"
+
+      p = PubKey.dot(0x12345deadbeef, PubKey.g())
+      p_comp = Serialize.address(p, compress: true, testnet: false) 
+      assert p_comp == "1F1Pn2y6pDb68E5nYJJeba4TLg2U7B6KF1"
+    end
+
+  end
+
   describe "Serialize a signature" do
     test "basic case" do
       r = 0x37206a0610995c58074999cb9767b87af4c4978db68c06e8e6e81d282047a7c6
@@ -67,8 +85,8 @@ defmodule SerializeTest do
     end
 
     test "maintain the leading zeroes" do
-      hex = "0000000c7207fee197d27c618aea621406f6bf5ef6fca38681d82b2f06fddbdce6feab6"
-      assert Serialize.hex_2_b58(hex) == "0000000EQJsjkd6JaGwxrjEhfeqPenqHwrBmPQZjJGNSCHBkcF7"
+      hex = "000000c7207fee197d27c618aea621406f6bf5ef6fca38681d82b2f06fddbdce6feab6"
+      assert Serialize.hex_2_b58(hex) == "111EQJsjkd6JaGwxrjEhfeqPenqHwrBmPQZjJGNSCHBkcF7"
     end
   end
 end

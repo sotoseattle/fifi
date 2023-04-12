@@ -9,6 +9,9 @@ defmodule Serialize do
 
   #############################################################################
   #                          SEC - PUBLIC KEY                                 #
+  #                             65 bytes -> uncompressed (x & y)              #
+  #                             33 bytes -> compressed (x)                    #
+  #               address ----> 20 bytes -> compressed & hashed & base58      #
   #############################################################################
 
   def as_SEC(%PubKey{} = p, compress: false) do
@@ -62,6 +65,29 @@ defmodule Serialize do
   defp choose_y(y, "02"), do: pick_other(y)
 
 
+
+  defp prepend_net(bin, true), do: <<0x6f, bin::binary>>
+  defp prepend_net(bin, false), do: <<0x00, bin::binary>>
+
+  defp checksum_b58(bin) do
+    checksum = bin |> Util.hashash256() |> binary_part(0, 4)
+
+    bin <> checksum
+      |> :binary.encode_hex
+      |> hex_2_b58()
+  end
+
+  def address(%PubKey{} = p, compress: bool1, testnet: bool2) do
+    p
+      |> as_SEC(compress: bool1)
+      |> :binary.decode_hex
+      |> Util.hash160
+      |> prepend_net(bool2)
+      |> checksum_b58
+  end
+
+
+
   #############################################################################
   #               SERIALIZATION OF SIGNATURES • DER FORMAT                    #
   #############################################################################
@@ -81,12 +107,12 @@ defmodule Serialize do
   end
 
   #############################################################################
-  #                           CONVERSION TO BASE 58                           #
+  #                   CONVERSION TO BASE 58 • PUBLIC KEYS                     #
   #   Like base 64 but without 0 and letters O, l, I (to avoid confussion)    #
   #############################################################################
 
-  defp get_prefix_0s("0" <> rest, zeroes), do: get_prefix_0s(rest, zeroes <> "0")
-  defp get_prefix_0s(hex, zeroes), do: {hex, zeroes}
+  defp get_prefix_00("00" <> rest, zeroes), do: get_prefix_00(rest, zeroes+1)
+  defp get_prefix_00(hex, zeroes), do: {hex, zeroes}
 
   defp translate_hex({hex, zeroes}) do
     hex = 
@@ -103,18 +129,14 @@ defmodule Serialize do
     map_to_base58(div, [chr | acc])
   end
 
-  defp add_prefix_0({b58_string, zeroes}), do: "#{zeroes}#{b58_string}"
+  defp add_prefix_1({b58_string, zeroes}), do:
+     "#{String.duplicate("1", zeroes)}#{b58_string}"
 
   def hex_2_b58(hex) do
     hex
-      |> get_prefix_0s("")
+      |> get_prefix_0s(0)
       |> translate_hex
-      |> add_prefix_0
+      |> add_prefix_1
   end
-
-
-
-
-
 
 end

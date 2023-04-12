@@ -15,7 +15,7 @@ defmodule PrivKeyTest do
     end
 
     test "the hash of the message is a double hash" do
-      z = PrivKey.hashash256("Programming Bitcoin!")
+      z = Util.hashash256("Programming Bitcoin!")
       |> :binary.decode_unsigned(:big)
 
       assert z == 0x969f6056aa26f7d2795fd013fe88868d09c9f6aed96965016e1936ae47060d48
