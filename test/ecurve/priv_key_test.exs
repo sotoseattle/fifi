@@ -3,9 +3,9 @@ defmodule PrivKeyTest do
 
   describe "signing" do
     test "signing and verifying" do
-      sec_key = :crypto.hash(:sha256, "my secret key") |> Util.to_int
+      sec_key = :crypto.hash(:sha256, "my secret key") |> Util.hex_2_big
 
-      message = :crypto.hash(:sha256, "hola caracola") |> Util.to_int
+      message = :crypto.hash(:sha256, "hola caracola") |> Util.hex_2_big
 
       signature = PrivKey.sign(sec_key, message)
 

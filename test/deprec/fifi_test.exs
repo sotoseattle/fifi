@@ -196,7 +196,6 @@ defmodule FifiTest do
   end
 
   describe "division" do
-    @tag runnable: true
     test "basic case" do
       assert new(2, 19)
         |> divide(new(7, 19))

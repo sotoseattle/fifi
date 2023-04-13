@@ -20,17 +20,28 @@ defmodule Util do
     bep(fun.(p, p), fun.(acc, p), m, rightmost_bit(m), fun)
   end
 
-  # the same as Base.encode16 |> Integer.parse(16) ...
-  def to_int(bin) do
-    :binary.decode_unsigned(bin, :big)
-  end
-
-
+  
+  
   def hashash256(message) do
     :crypto.hash(:sha256, :crypto.hash(:sha256, message))
   end
-
+  
   def hash160(message) do
     :crypto.hash(:ripemd160, :crypto.hash(:sha256, message))
   end
+  
+  
+  #############################################################################
+  #                             BINARY CONVERSIONS                            #
+  #############################################################################
+  
+  def hex_2_big(hex) do
+    hex |> :binary.decode_unsigned(:big)
+  end
+
+  def hex_2_little(hex) do
+    hex |> :binary.decode_hex |> :binary.decode_unsigned(:little)
+  end
+
+
 end
